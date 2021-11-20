@@ -23,6 +23,8 @@ class KApp extends StatelessWidget {
         "http://p3.music.126.net/DrRIg6CrgDfVLEph9SNh7w==/18696095720518497.jpg",
     this.name = "Bilibili",
     this.logoRadius = 16,
+    this.spacing = 3,
+    this.onTap,
   }) : super(key: key);
 
   final String name;
@@ -31,28 +33,35 @@ class KApp extends StatelessWidget {
 
   final double logoRadius;
 
+  final double? spacing;
+
+  final VoidCallback? onTap;
+
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(logoRadius),
-          child: Image.network(
-            logo,
-            width: double.infinity,
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(logoRadius),
+            child: Image.network(
+              logo,
+              width: double.infinity,
+            ),
           ),
-        ),
-        const SizedBox(
-          height: 3,
-        ),
-        Text(
-          name,
-          style: const TextStyle(
-            fontSize: 15,
+          SizedBox(
+            height: spacing,
           ),
-          maxLines: 1,
-        ),
-      ],
+          Text(
+            name,
+            style: const TextStyle(
+              fontSize: 15,
+            ),
+            maxLines: 1,
+          ),
+        ],
+      ),
     );
   }
 }
