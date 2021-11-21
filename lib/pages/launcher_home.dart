@@ -17,6 +17,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:lanucher/widget/k_app.dart';
 
+import 'launcher_add_view.dart';
+
 class LauncherHome extends StatefulWidget {
   const LauncherHome({Key? key}) : super(key: key);
 
@@ -33,7 +35,16 @@ class _LauncherHomeState extends State<LauncherHome> {
         trailing: CupertinoButton(
           padding: EdgeInsets.zero,
           child: const Text("添加"),
-          onPressed: () {},
+          onPressed: () {
+            Navigator.push(
+              context,
+              CupertinoPageRoute(
+                builder: (context) {
+                  return const LauncherAddView();
+                },
+              ),
+            );
+          },
         ),
       ),
       child: SafeArea(
