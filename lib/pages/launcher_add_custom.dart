@@ -15,7 +15,13 @@
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter_cupertino_settings/flutter_cupertino_settings.dart';
+import 'package:lanucher/model/item.dart';
+import 'package:lanucher/provider/launcher_provider.dart';
+import 'package:lanucher/utils/helper.dart';
+import 'package:lanucher/widget/k_appicon.dart';
+import 'package:metadata_fetch/metadata_fetch.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
+import 'package:provider/provider.dart';
 
 import 'add_custom_modal.dart';
 
@@ -27,10 +33,123 @@ class LauncherAddCustom extends StatefulWidget {
 }
 
 class _LauncherAddCustomState extends State<LauncherAddCustom> {
-  bool get canAdd => true;
+  bool get canAdd {
+    return _nameText.isNotEmpty && _linkText.isNotEmpty && isURL(_linkText);
+  }
+
+  int _currentCupertinoIconIndex = 0;
+  int _curerntGradientsIndex = 0;
+
+  final TextEditingController _name = TextEditingController();
+
+  final TextEditingController _link = TextEditingController();
+
+  String _nameText = "";
+  String _linkText = "";
+
+  String _icon = "";
+
+  AppItemModelIconType _appType = AppItemModelIconType.custom;
+
+  AppItemModel get appData => AppItemModel(
+        bgIndex: _curerntGradientsIndex,
+        iconIndex: _currentCupertinoIconIndex,
+        appType: _appType,
+        name: _nameText,
+        appUrl: _linkText,
+        appIcon: _icon,
+        appId: "",
+      );
+
+  /// 尽量的获取 `logo`
+  /// [_linkText]
+  Future<String?> fetchLogo({String? url}) async {
+    var link = _linkText;
+    if (url != null) link = url;
+    if (link.isEmpty) return null;
+    var metaData = await MetadataFetch.extract(link);
+    return metaData!.image;
+  }
+
+  previewLogoModel(BuildContext context, String logo) {
+    showCupertinoDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Image.network(
+                logo,
+                height: 120,
+              ),
+              const SizedBox(
+                height: 24,
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  CupertinoButton.filled(
+                    child: const Text("取消"),
+                    onPressed: () {
+                      Navigator.maybePop(context);
+                    },
+                  ),
+                  const SizedBox(
+                    width: 12,
+                  ),
+                  CupertinoButton.filled(
+                    child: const Text("使用"),
+                    onPressed: () {
+                      setState(() {
+                        _appType = AppItemModelIconType.image;
+                        _icon = logo;
+                      });
+                      Navigator.maybePop(context);
+                    },
+                  ),
+                ],
+              )
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  initInputTextController() {
+    _name.addListener(() {
+      setState(() {
+        _nameText = _name.text;
+      });
+    });
+    _link.addListener(() {
+      setState(() {
+        _linkText = _link.text;
+      });
+    });
+  }
+
+  @override
+  void initState() {
+    initInputTextController();
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    super.dispose();
+    _name.dispose();
+    _link.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
+    var opaqueSeparatorColor =
+        CupertinoColors.opaqueSeparator.resolveFrom(context);
     return CupertinoPageScaffold(
       navigationBar: const CupertinoNavigationBar(
         previousPageTitle: "返回",
@@ -50,8 +169,7 @@ class _LauncherAddCustomState extends State<LauncherAddCustom> {
                   color: CupertinoTheme.of(context).barBackgroundColor,
                   border: Border(
                     bottom: BorderSide(
-                      color:
-                          CupertinoColors.opaqueSeparator.resolveFrom(context),
+                      color: opaqueSeparatorColor,
                     ),
                   ),
                 ),
@@ -62,22 +180,27 @@ class _LauncherAddCustomState extends State<LauncherAddCustom> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       GestureDetector(
-                        onTap: () {
-                          showCupertinoModalBottomSheet(
+                        onTap: () async {
+                          List<int>? result =
+                              await showCupertinoModalBottomSheet(
                             expand: true,
                             context: context,
-                            builder: (context) => LauncherAddCustomModal(),
+                            builder: (context) =>
+                                const LauncherAddCustomModal(),
                           );
+                          if (result == null) return;
+                          setState(() {
+                            _appType = AppItemModelIconType.custom;
+                            _currentCupertinoIconIndex = result[0];
+                            _curerntGradientsIndex = result[1];
+                          });
                         },
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(12),
-                          child: Container(
-                            decoration: const BoxDecoration(
-                              color: CupertinoColors.activeBlue,
-                            ),
-                            width: 66,
-                            height: 66,
-                          ),
+                        child: KAppIcon(
+                          width: 60,
+                          height: 60,
+                          iconSize: 24,
+                          borderRadius: 12,
+                          item: appData,
                         ),
                       ),
                       const SizedBox(
@@ -87,19 +210,22 @@ class _LauncherAddCustomState extends State<LauncherAddCustom> {
                         child: Column(
                           children: [
                             CupertinoTextField(
+                              controller: _name,
                               placeholder: "名称",
                               decoration: BoxDecoration(
                                 border: Border(
                                   bottom: BorderSide(
-                                    color: CupertinoColors.opaqueSeparator
-                                        .resolveFrom(context),
+                                    color: opaqueSeparatorColor,
                                   ),
                                 ),
                               ),
+                              clearButtonMode: OverlayVisibilityMode.editing,
                             ),
-                            const CupertinoTextField(
+                            CupertinoTextField(
+                              controller: _link,
                               placeholder: "链接",
-                              decoration: BoxDecoration(),
+                              decoration: const BoxDecoration(),
+                              clearButtonMode: OverlayVisibilityMode.editing,
                             ),
                           ],
                         ),
@@ -107,6 +233,25 @@ class _LauncherAddCustomState extends State<LauncherAddCustom> {
                     ],
                   ),
                 ),
+              ),
+              Builder(
+                builder: (context) {
+                  if (!canAdd) return const SizedBox.shrink();
+                  return Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: CupertinoButton.filled(
+                        child: const Text("自动抓取Logo"),
+                        onPressed: () async {
+                          var logo = await fetchLogo();
+                          if (logo == null) return;
+                          previewLogoModel(context, logo);
+                        },
+                      ),
+                    ),
+                  );
+                },
               ),
               Container(
                 padding: const EdgeInsets.only(
@@ -126,35 +271,43 @@ class _LauncherAddCustomState extends State<LauncherAddCustom> {
               const SizedBox(
                 height: 24,
               ),
-              Container(
-                child: Text(
-                  "添加",
-                  style: TextStyle(
-                    color: canAdd
-                        ? CupertinoTheme.of(context).primaryColor
-                        : CupertinoColors.black.withOpacity(
-                            .2,
-                          ),
-                  ),
-                ),
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: CupertinoTheme.of(context).barBackgroundColor,
-                  border: Border(
-                    top: BorderSide(
-                      color:
-                          CupertinoColors.opaqueSeparator.resolveFrom(context),
-                    ),
-                    bottom: BorderSide(
-                      color:
-                          CupertinoColors.opaqueSeparator.resolveFrom(context),
+              GestureDetector(
+                onTap: () {
+                  if (!canAdd) return;
+                  Provider.of<LauncherNotifier>(
+                    context,
+                    listen: false,
+                  ).commit(
+                    LauncherNotifierActionType.add,
+                    appData,
+                  );
+                },
+                child: Container(
+                  child: Text(
+                    "添加",
+                    style: TextStyle(
+                      color: canAdd
+                          ? CupertinoTheme.of(context).primaryColor
+                          : CupertinoColors.black.withOpacity(.2),
                     ),
                   ),
-                ),
-                padding: const EdgeInsets.only(
-                  left: 10.0,
-                  bottom: 12,
-                  top: 12,
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    color: CupertinoTheme.of(context).barBackgroundColor,
+                    border: Border(
+                      top: BorderSide(
+                        color: opaqueSeparatorColor,
+                      ),
+                      bottom: BorderSide(
+                        color: opaqueSeparatorColor,
+                      ),
+                    ),
+                  ),
+                  padding: const EdgeInsets.only(
+                    left: 10.0,
+                    bottom: 12,
+                    top: 12,
+                  ),
                 ),
               )
             ],

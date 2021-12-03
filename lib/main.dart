@@ -18,8 +18,14 @@ import 'package:flutter/material.dart';
 import 'package:lanucher/pages/launcher_home.dart';
 import 'package:lanucher/pages/launcher_note.dart';
 import 'package:lanucher/pages/launcher_settings.dart';
+import 'package:lanucher/provider/launcher_provider.dart';
+import 'package:lanucher/provider/theme_provider.dart';
+import 'package:lanucher/utils/local_storage.dart';
+import 'package:provider/provider.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await LocalStorage.getInstance();
   runApp(const MyApp());
 }
 
@@ -28,13 +34,24 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const CupertinoApp(
-      debugShowCheckedModeBanner: false,
-      title: 'Launcher',
-      theme: CupertinoThemeData(
-        primaryColor: Colors.pink,
-      ),
-      home: MyHomePage(),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider<ThemeNotifier>(
+          create: (_) => ThemeNotifier(),
+        ),
+        ChangeNotifierProvider<LauncherNotifier>(
+          create: (_) => LauncherNotifier(),
+        ),
+      ],
+      builder: (context, child) {
+        final notifier = context.watch<ThemeNotifier>();
+        return CupertinoApp(
+          debugShowCheckedModeBanner: false,
+          title: 'Launcher',
+          theme: notifier.darkTheme ? dark : light,
+          home: const MyHomePage(),
+        );
+      },
     );
   }
 }

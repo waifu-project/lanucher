@@ -17,6 +17,8 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 
 import 'package:flutter_cupertino_settings/flutter_cupertino_settings.dart';
+import 'package:lanucher/provider/theme_provider.dart';
+import 'package:provider/provider.dart';
 
 CSWidgetStyle brightnessStyle = const CSWidgetStyle(
     icon: const Icon(Icons.brightness_medium, color: Colors.black54));
@@ -39,11 +41,22 @@ class _LauncherSettingsState extends State<LauncherSettings> {
         items: <Widget>[
           const CSHeader('Brightness'),
           CSWidget(
-              CupertinoSlider(
-                value: 0.5,
-                onChanged: (value) {},
-              ),
-              style: brightnessStyle),
+            CupertinoSlider(
+              value: 0.5,
+              onChanged: (value) {},
+            ),
+            style: brightnessStyle,
+          ),
+          Consumer<ThemeNotifier>(
+                builder:(context, notifier, child) => 
+                  CupertinoSwitch(
+              value: true,
+              onChanged: (bool value) {
+                notifier.toggleTheme();
+              },
+            ),
+            ),
+
           CSControl(
             nameWidget: const Text('Auto brightness'),
             contentWidget: CupertinoSwitch(

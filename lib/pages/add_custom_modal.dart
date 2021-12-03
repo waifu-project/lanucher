@@ -13,13 +13,10 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import 'dart:convert';
-
 import 'package:flutter/cupertino.dart';
-import 'package:flutter/services.dart';
 import 'package:lanucher/data/gradients.dart';
-import 'package:lanucher/data/icons.dart';
-import 'package:lanucher/model/gradients_json_data/gradients_json_data.dart';
+import 'package:lanucher/model/item.dart';
+import 'package:lanucher/widget/k_appicon.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 
 import 'icon_lists.dart';
@@ -38,21 +35,7 @@ class _LauncherAddCustomModalState extends State<LauncherAddCustomModal> {
   }
 
   int _currentCupertinoIconIndex = 0;
-
-  IconData get _currentIconData {
-    return cupertinoIconList[_currentCupertinoIconIndex];
-  }
-
   int _curerntGradientsIndex = 0;
-
-  List<Color> get _currentBgColor {
-    Map<String, dynamic> current = gradientsList[_curerntGradientsIndex];
-    List<String> data = current["colors"];
-    return [
-      data[0].toColor(),
-      data[1].toColor(),
-    ];
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -62,7 +45,12 @@ class _LauncherAddCustomModalState extends State<LauncherAddCustomModal> {
         leading: CupertinoButton(
           padding: EdgeInsets.zero,
           child: const Text("确定"),
-          onPressed: () {},
+          onPressed: () {
+            Navigator.pop(context, [
+              _currentCupertinoIconIndex,
+              _curerntGradientsIndex,
+            ]);
+          },
         ),
         trailing: CupertinoButton(
           padding: EdgeInsets.zero,
@@ -94,26 +82,13 @@ class _LauncherAddCustomModalState extends State<LauncherAddCustomModal> {
                     width: double.infinity,
                     height: constSize.maxHeight * .6,
                     child: Center(
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(24),
-                        child: AnimatedContainer(
-                          width: 120,
-                          height: 120,
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: _currentBgColor,
-                            ),
-                          ),
-                          child: Center(
-                            child: Icon(
-                              _currentIconData,
-                              color: CupertinoColors.white,
-                              size: 82,
-                            ),
-                          ),
-                          duration: const Duration(
-                            milliseconds: 420,
-                          ),
+                      child: KAppIcon(
+                        width: 120,
+                        height: 120,
+                        borderRadius: 24,
+                        item: AppItemModel(
+                          bgIndex: _curerntGradientsIndex,
+                          iconIndex: _currentCupertinoIconIndex,
                         ),
                       ),
                     ),
@@ -122,7 +97,8 @@ class _LauncherAddCustomModalState extends State<LauncherAddCustomModal> {
                     child: CupertinoScrollbar(
                       child: GridView.builder(
                         padding: const EdgeInsets.all(24),
-                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                        gridDelegate:
+                            const SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: 5,
                           mainAxisSpacing: 12,
                           crossAxisSpacing: 12,

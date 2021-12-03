@@ -15,9 +15,23 @@
 
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:lanucher/widget/k_app.dart';
+import 'package:lanucher/model/item.dart';
+import 'package:lanucher/provider/launcher_provider.dart';
+import 'package:lanucher/widget/k_appicon.dart';
+import 'package:provider/provider.dart';
 
 import 'launcher_add_view.dart';
+
+enum triggerCardActionType {
+  /// 编辑
+  edit,
+
+  /// 删除
+  del,
+
+  /// 取消
+  cancel
+}
 
 class LauncherHome extends StatefulWidget {
   const LauncherHome({Key? key}) : super(key: key);
@@ -26,9 +40,34 @@ class LauncherHome extends StatefulWidget {
   _LauncherHomeState createState() => _LauncherHomeState();
 }
 
-class _LauncherHomeState extends State<LauncherHome> {
+class _LauncherHomeState extends State<LauncherHome>
+    with AutomaticKeepAliveClientMixin {
+  handleTriggerCardAction(
+    triggerCardActionType type,
+    BuildContext context,
+    AppItemModel item,
+  ) {
+    switch (type) {
+      case triggerCardActionType.edit:
+        return;
+      case triggerCardActionType.del:
+        Provider.of<LauncherNotifier>(
+          context,
+          listen: false,
+        ).commit(
+          LauncherNotifierActionType.remove,
+          item,
+        );
+        Navigator.maybePop(context);
+        return;
+      default:
+        Navigator.maybePop(context);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return CupertinoPageScaffold(
       navigationBar: CupertinoNavigationBar(
         middle: const Text("启动器"),
@@ -55,15 +94,87 @@ class _LauncherHomeState extends State<LauncherHome> {
               crossAxisCount: 5,
               mainAxisSpacing: 0,
               crossAxisSpacing: 3,
-              childAspectRatio: 4 / 5.66,
+              childAspectRatio: 4 / 4.66,
             ),
+            itemCount: Provider.of<LauncherNotifier>(context).dataLength,
             itemBuilder: (context, index) {
-              return Container(
-                child: const KApp(),
-                margin: const EdgeInsets.only(
-                  top: 12,
-                  left: 6,
-                  right: 6,
+              var curr = Provider.of<LauncherNotifier>(context).data[index];
+              return CupertinoContextMenu(
+                previewBuilder: (context, animation, child) =>
+                    KAppIcon(item: curr),
+                actions: [
+                  CupertinoContextMenuAction(
+                    child: const Text(
+                      '编辑',
+                    ),
+                    trailingIcon: CupertinoIcons.right_chevron,
+                    onPressed: () {
+                      handleTriggerCardAction(
+                        triggerCardActionType.edit,
+                        context,
+                        curr,
+                      );
+                    },
+                  ),
+                  CupertinoContextMenuAction(
+                    child: const Text(
+                      '删除',
+                      style: TextStyle(
+                        color: CupertinoColors.systemRed,
+                      ),
+                    ),
+                    trailingIcon: CupertinoIcons.delete_right_fill,
+                    onPressed: () {
+                      handleTriggerCardAction(
+                        triggerCardActionType.del,
+                        context,
+                        curr,
+                      );
+                    },
+                  ),
+                  CupertinoContextMenuAction(
+                    child: const Text(
+                      '取消',
+                    ),
+                    trailingIcon: CupertinoIcons.clear_thick,
+                    onPressed: () {
+                      handleTriggerCardAction(
+                        triggerCardActionType.cancel,
+                        context,
+                        curr,
+                      );
+                    },
+                  ),
+                ],
+                child: Container(
+                  child: Column(
+                    children: [
+                      Expanded(
+                        child: KAppIcon(
+                          item: curr,
+                          height: 60,
+                          iconSize: 24,
+                          borderRadius: 12,
+                        ),
+                      ),
+                      const SizedBox(
+                        height: 6,
+                      ),
+                      Text(
+                        curr.name,
+                        style: const TextStyle(
+                          fontSize: 14,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                  margin: const EdgeInsets.only(
+                    top: 12,
+                    left: 6,
+                    right: 6,
+                  ),
                 ),
               );
             },
@@ -72,4 +183,7 @@ class _LauncherHomeState extends State<LauncherHome> {
       ),
     );
   }
+
+  @override
+  bool get wantKeepAlive => true;
 }
