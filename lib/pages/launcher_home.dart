@@ -18,8 +18,10 @@ import 'package:flutter/material.dart';
 import 'package:lanucher/model/item.dart';
 import 'package:lanucher/provider/launcher_provider.dart';
 import 'package:lanucher/widget/k_appicon.dart';
+import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 import 'package:provider/provider.dart';
 
+import 'launcher_add_custom.dart';
 import 'launcher_add_view.dart';
 
 enum triggerCardActionType {
@@ -49,6 +51,12 @@ class _LauncherHomeState extends State<LauncherHome>
   ) {
     switch (type) {
       case triggerCardActionType.edit:
+        Navigator.pop(context);
+        showCupertinoModalBottomSheet(
+          expand: true,
+          context: context,
+          builder: (context) => LauncherAddCustom(editItem: item,),
+        );
         return;
       case triggerCardActionType.del:
         Provider.of<LauncherNotifier>(

@@ -19,6 +19,7 @@ import 'package:lanucher/model/item.dart';
 import 'package:lanucher/provider/launcher_provider.dart';
 import 'package:lanucher/utils/helper.dart';
 import 'package:lanucher/widget/k_appicon.dart';
+import 'package:lanucher/widget/k_toast.dart';
 import 'package:metadata_fetch/metadata_fetch.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 import 'package:provider/provider.dart';
@@ -26,7 +27,13 @@ import 'package:provider/provider.dart';
 import 'add_custom_modal.dart';
 
 class LauncherAddCustom extends StatefulWidget {
-  const LauncherAddCustom({Key? key}) : super(key: key);
+  const LauncherAddCustom({
+    Key? key,
+    this.editItem,
+  }) : super(key: key);
+
+  /// 编辑的 [index]
+  final AppItemModel? editItem;
 
   @override
   _LauncherAddCustomState createState() => _LauncherAddCustomState();
@@ -133,9 +140,52 @@ class _LauncherAddCustomState extends State<LauncherAddCustom> {
     });
   }
 
+  /// 尝试优先写入编辑的内容
+  tryLoadEditItem() {
+    if (!isEditView) return;
+    AppItemModel model = widget.editItem as AppItemModel;
+    setState(() {
+      _curerntGradientsIndex = model.bgIndex;
+      _currentCupertinoIconIndex = model.iconIndex;
+      _appType = model.appType;
+      _name.text = model.name;
+      _link.text = model.appUrl;
+      _icon = model.appIcon;
+    });
+  }
+
+  /// 清除数据
+  ///
+  /// 1. 添加成功之后, 使用该函数
+  cleanUiData() {
+    setState(() {
+      _curerntGradientsIndex = 0;
+      _currentCupertinoIconIndex = 0;
+      _appType = AppItemModelIconType.custom;
+      _name.text = "";
+      _link.text = "";
+      _icon = "";
+    });
+  }
+
+  /// 是否为编辑模式
+  bool get isEditView => widget.editItem != null;
+
+  String get _title => isEditView ? "编辑" : "自定义";
+
+  String get _actionTitle => isEditView ? "修改" : "添加";
+
+  /// [LauncherNotifierActionType.change] 修改
+  ///
+  ///  [LauncherNotifierActionType.add] 添加
+  LauncherNotifierActionType get _actionType => isEditView
+      ? LauncherNotifierActionType.change
+      : LauncherNotifierActionType.add;
+
   @override
   void initState() {
     initInputTextController();
+    tryLoadEditItem();
     super.initState();
   }
 
@@ -146,14 +196,16 @@ class _LauncherAddCustomState extends State<LauncherAddCustom> {
     _link.dispose();
   }
 
+  String get _toastShowMessage => isEditView ? "修改成功" : "添加成功";
+
   @override
   Widget build(BuildContext context) {
     var opaqueSeparatorColor =
         CupertinoColors.opaqueSeparator.resolveFrom(context);
     return CupertinoPageScaffold(
-      navigationBar: const CupertinoNavigationBar(
+      navigationBar: CupertinoNavigationBar(
         previousPageTitle: "返回",
-        middle: Text("自定义"),
+        middle: Text(_title),
       ),
       child: SafeArea(
         child: CupertinoScrollbar(
@@ -278,13 +330,23 @@ class _LauncherAddCustomState extends State<LauncherAddCustom> {
                     context,
                     listen: false,
                   ).commit(
-                    LauncherNotifierActionType.add,
+                    _actionType,
                     appData,
+                    widget.editItem,
+                  );
+                  if (!isEditView) {
+                    cleanUiData();
+                  }
+                  Navigator.maybePop(context);
+                  Toast.show(
+                    _toastShowMessage,
+                    context,
+                    backgroundColor: CupertinoTheme.of(context).primaryColor,
                   );
                 },
                 child: Container(
                   child: Text(
-                    "添加",
+                    _actionTitle,
                     style: TextStyle(
                       color: canAdd
                           ? CupertinoTheme.of(context).primaryColor

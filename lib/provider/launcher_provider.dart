@@ -13,8 +13,6 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import 'dart:convert';
-
 import 'package:flutter/foundation.dart';
 import 'package:lanucher/model/item.dart';
 import 'package:lanucher/utils/local_storage.dart';
@@ -25,6 +23,9 @@ enum LauncherNotifierActionType {
 
   /// 删除
   remove,
+
+  /// 修改
+  change,
 
   /// 清除
   clean,
@@ -60,13 +61,25 @@ class LauncherNotifier extends ChangeNotifier {
 
   int get dataLength => _data.length;
 
-  commit(LauncherNotifierActionType type, [AppItemModel? payload]) {
+  commit(
+    LauncherNotifierActionType type, [
+    AppItemModel? payload,
+    AppItemModel? oldPayload,
+  ]) {
     switch (type) {
       case LauncherNotifierActionType.add:
         if (payload != null) _data.add(payload);
         break;
       case LauncherNotifierActionType.remove:
         if (payload != null) _data.remove(payload);
+        break;
+      case LauncherNotifierActionType.change:
+        if (payload != null && oldPayload != null) {
+          int index = _data.indexOf(oldPayload);
+          if (index >= 0) {
+            _data[index] = payload;
+          }
+        }
         break;
       default:
         _data = [];
